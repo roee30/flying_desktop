@@ -17,6 +17,6 @@ setup(
     author="Roee Nizan",
     author_email="roeen30@gmail.com",
     description="Download wallpapers from your social media accounts",
-    entry_points=dict(gui_scripts=["flydesk = flying_desktop.__main__:main"]),
+    entry_points={"gui_scripts": ["flydesk = flying_desktop.__main__:main"]},
     package_data={"flying_desktop": ["providers/*/credentials.json"]},
 )

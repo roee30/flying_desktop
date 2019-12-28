@@ -1,4 +1,6 @@
 import asyncio
+import logging
+import os
 import random
 import tempfile
 import tkinter as tk
@@ -10,7 +12,9 @@ from flying_desktop.app import WidthFilter, make_button, Progressbar
 from flying_desktop.app.providers_dialog import ProvidersDialog
 from flying_desktop.buckets import FilledBucket
 from flying_desktop.providers import BadResponse
-from flying_desktop.utils import save_photo, delegate, change_wallpaper, async_callback
+from flying_desktop.utils import save_photo, delegate, change_wallpaper, async_callback, LOG_FILE
+
+log = logging.getLogger(__name__)
 
 
 class AppWindow(tk.Frame):
@@ -40,60 +44,31 @@ class AppWindow(tk.Frame):
         super().__init__(parent)
         self.loop = loop
         parent.title(PRETTY_NAME)
-        self.change_button = self.add_button(
-            "Hit me",
-            self.change_wallpaper
-        )
+        self.change_button = self.add_button("Hit me", self.change_wallpaper)
         #
         self.label = tk.Label(self, text="Download not started")
         self.label.pack()
         self.width = self.add_width_filter()
-        #
-        #     width_group = self.add_group(QVBoxLayout, width_label, self.width)
-        #     self.layout.addWidget(width_group, 1, 1)
-        #
-        # self.providers_dialog = ProvidersDialog(parent, self.update_photo_status)
         self.providers_dialog = ProvidersDialog(self, self.update_photo_status)
         self.providers_dialog.hide()
         self.login_button = tk.Button(
-            self,
-            text="Connect",
-            # command=lambda: parent.wait_window(self.providers_dialog.top)
-            command=self.providers_dialog.show,
+            self, text="Connect", command=self.providers_dialog.show,
         )
         self.login_button.pack()
+        self.log_button = tk.Label(self, text="Log file", fg="blue", cursor="hand2")
+        self.log_button.bind("<Button-1>", lambda _: os.system(f"notepad {LOG_FILE}"))
+        self.log_button.pack()
 
     def add_width_filter(self):
         """
         Add photo width filter spinbox to window
         :return: push button and label
         """
-        #     width_label = QLabel("Minimum picture width", self)
         width = WidthFilter(self, self.update_photo_status)
         width.pack()
         return width
 
-    #     return width, width_label
-    #
-    # def add_group(self, layout: Type[QLayout], *widgets: QWidget) -> QGridLayout:
-    #     """
-    #     Add a new group to window
-    #     :param layout: type of layout for group
-    #     :param widgets: widgets to add to group
-    #     :return: added group
-    #     """
-    #     group = QGroupBox(self)
-    #     group_layout = layout(group)
-    #     for widget in widgets:
-    #         group_layout.addWidget(widget)
-    #     self.layout.addWidget(group)
-    #     return group
-
-    def add_button(
-        self,
-        text: str,
-        on_click: Callable = None,
-    ) -> tk.Button:
+    def add_button(self, text: str, on_click: Callable = None,) -> tk.Button:
         """
         Add new button to window
         :param text: button text
@@ -109,14 +84,12 @@ class AppWindow(tk.Frame):
         Display amount of photos for which metadata has been downloaded
         and amount currently selected by filter
         """
-        self.label["text"] = f"{len(self.meta_photos)} photos fetched\n{len(self.select())} matching photos"
+        self.label[
+            "text"
+        ] = f"{len(self.meta_photos)} photos fetched\n{len(self.select())} matching photos"
 
     async def get_photo_and_change(
-        self,
-            bar: Progressbar,
-        bucket: FilledBucket,
-        meta_photo: dict,
-        retry: int = 3,
+        self, bar: Progressbar, bucket: FilledBucket, meta_photo: dict, retry: int = 3,
     ) -> None:
         """
         Change wallpaper to photo represented by ``meta_photo`` metadata
@@ -134,15 +107,13 @@ class AppWindow(tk.Frame):
             )
             bar.text["text"] = "Changing wallpaper"
             await delegate(change_wallpaper, photo_path)
-            # await change_wallpaper(photo_path)
         except BadResponse as e:
             if not retry:
                 raise
-            traceback.print_exc()
-            print(f"Bad response: {e.response}")
+            log.error("".join(traceback.format_exc()))
+            log.error(f"Bad response: {e.response}")
             return await self.get_photo_and_change(bar, bucket, meta_photo, retry - 1)
         finally:
-            # self.change_button.setEnabled(True)
             self.change_button["state"] = tk.NORMAL
 
     def select(self) -> Sequence[Tuple[FilledBucket, dict]]:
@@ -167,18 +138,12 @@ class AppWindow(tk.Frame):
                 self.login_button.configure(dict(zip(keys, (5, "green", "green"))))
                 await asyncio.sleep(1)
             finally:
-                # self.login_button.setStyleSheet(background)
                 self.login_button.configure(old_values)
             return
-        # size = self.size()
         filtered_photos = self.select()
         if not filtered_photos:
-            # noinspection PyCallByClass
-            print("no matching photos")
-            # QMessageBox.warning(self, APP_NAME, "No matching photos")
+            log.warning("no matching photos")
             return
-
-        # bar = QProgressDialog("Downloading photo...", "cancel", 0, 0, self)
 
         def cancel():
             bar.pack_forget()
@@ -193,11 +158,8 @@ class AppWindow(tk.Frame):
             self.get_photo_and_change(bar, *random.choice(filtered_photos))
         )
         try:
-            # bar.canceled.connect(coro.cancel)
-            # self.layout.addWidget(bar, 3, 0, 1, 2)
             await coro
         except asyncio.CancelledError:
             pass
         finally:
-            # self.resize(size)
             cancel()

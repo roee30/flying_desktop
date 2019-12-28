@@ -13,6 +13,7 @@ from typing import Union, AsyncGenerator, Any
 import aiofiles
 import attr
 import pprintpp as pprintpp
+from appdirs import user_log_dir
 
 from .providers import Photo
 
@@ -31,31 +32,54 @@ class LoopError:
 
     def handler(self):
         logging.error(
-            pprintpp.pformat({key: value for key, value in attr.asdict(self).items() if value})
+            pprintpp.pformat(
+                {key: value for key, value in attr.asdict(self).items() if value}
+            )
         )
 
 
 loop = asyncio.new_event_loop()
 loop.set_debug(True)
 loop.set_exception_handler(lambda _, context: LoopError(**context).handler())
-logging.basicConfig(
-    level=logging.WARNING,
-    format=" - ".join(f"%({x})s" for x in ["asctime", "levelname", "name", "message"]),
-)
 log = logging.getLogger(__name__)
+LOG_FILE = Path(user_log_dir(), "flying_desktop.log")
 
 
-def handler(future: Future):
+def logging_setup():
+    main_log = logging.getLogger("flying_desktop")
+    main_log.setLevel(logging.DEBUG)
+    formatter = logging.Formatter(
+        " - ".join(f"%({x})s" for x in ["asctime", "levelname", "name", "message"]),
+    )
+    LOG_FILE.parent.mkdir(exist_ok=True, parents=True)
+    file_handler = logging.FileHandler(LOG_FILE)
+    file_handler.setLevel(logging.INFO)
+    console_handler = logging.StreamHandler()
+    console_handler.setLevel(logging.DEBUG)
+
+    for handler in console_handler, file_handler:
+        handler.setFormatter(formatter)
+        log.addHandler(handler)
+
+
+logging_setup()
+
+
+def error_handler(future: Future):
     exc = future.exception()
     if exc:
-        log.error("error in thread: %s: traceback:\n%s", exc, "".join(traceback.format_tb(exc.__traceback__)))
+        log.error(
+            "error in thread: %s: traceback:\n%s",
+            exc,
+            "".join(traceback.format_tb(exc.__traceback__)),
+        )
 
 
 def async_callback(func):
     @wraps(func)
     def new_func(*args, **kwargs):
         future = asyncio.run_coroutine_threadsafe(func(*args, **kwargs), loop)
-        future.add_done_callback(handler)
+        future.add_done_callback(error_handler)
 
     return new_func
 
