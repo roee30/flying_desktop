@@ -10,6 +10,8 @@ from ...providers import Photo, SettingsStorage, PhotoProvider
 
 HERE = Path(__file__).parent
 
+ACCESS_TOKEN_EXPIRED = 190
+
 
 @attr.s(frozen=True)
 class APIPath:
@@ -19,15 +21,24 @@ class APIPath:
     :param path: Relative URL path
     """
 
-    api: facebook.GraphAPI = attr.ib(repr=False)
+    provider: 'FacebookPhotos' = attr.ib()
     path: URLPath = attr.ib(converter=URLPath, default="")
+    retries: int = attr.ib(default=1)
 
     def __call__(self, **kwargs):
         """
         Call URL path with ``kwargs`` as query parameters
         :param kwargs: query string parameters
         """
-        return self.api.request(str(self.path), args=kwargs)
+        try:
+            return self.provider.api.request(str(self.path), args=kwargs)
+        except facebook.GraphAPIError as ex:
+            print(ex.result)
+            if not self.retries or ex.code != ACCESS_TOKEN_EXPIRED:
+                raise
+        self.provider.renew_token()
+        # one retry
+        return attr.evolve(self, retries=self.retries - 1)(**kwargs)
 
     def __getattr__(self, item):
         """
@@ -47,10 +58,16 @@ class FacebookPhotos(PhotoProvider):
     scope = "user_photos"
 
     def __init__(self, credentials):
+        # super().__init__(credentials)
         super().__init__(credentials)
-        self.graph = APIPath(
-            facebook.GraphAPI(access_token=credentials.access_token, version=3.1)
-        )
+        self.api = facebook.GraphAPI(access_token=credentials.access_token, version=3.1)
+        self.graph = APIPath(self)
+
+    def renew_token(self):
+        self.storage.delete()
+        credentials = self.authorization_code_grant()
+        super().__init__(credentials)
+        self.api = facebook.GraphAPI(access_token=credentials.access_token, version=3.1)
 
     async def download_photo(self, meta_photo: dict) -> Photo:
         return await self._download_from_url(meta_photo["images"][0]["source"])

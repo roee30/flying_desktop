@@ -1,4 +1,5 @@
 import abc
+import json
 from http import HTTPStatus
 from pathlib import Path
 from typing import AsyncIterator, Sequence, Iterable
@@ -6,6 +7,7 @@ from typing import AsyncIterator, Sequence, Iterable
 import aiohttp
 import attr
 from oauth2client import client, tools
+from oauth2client.client import Credentials
 
 from flying_desktop.settings import SETTINGS
 
@@ -38,10 +40,11 @@ class SettingsStorage(client.Storage):
         self.settings_path = settings_path
 
     def locked_get(self):
-        return SETTINGS[self.settings_path]
+        value = SETTINGS[self.settings_path]
+        return value and Credentials.new_from_json(value)
 
-    def locked_put(self, credentials):
-        SETTINGS[self.settings_path] = credentials
+    def locked_put(self, credentials: Credentials):
+        SETTINGS[self.settings_path] = json.dumps(credentials.to_json())
 
     def locked_delete(self):
         return SETTINGS.remove(self.settings_path)

@@ -84,7 +84,7 @@ class EmptyBucket(PhotoBucket):
         )
 
     def has_credentials(self):
-        return SETTINGS.get(self._credentials_key, False, type=bool)
+        return SETTINGS.get(self._credentials_key, False)
 
 
 Google = BucketFactory(

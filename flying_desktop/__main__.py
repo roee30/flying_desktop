@@ -3,36 +3,26 @@ Run the Flying Desktop application.
 """
 import asyncio
 import sys
-
-from PyQt5.QtWidgets import QApplication
-from asyncqt import QEventLoop
+import threading
+import tkinter as tk
 
 from flying_desktop.app.main_window import AppWindow
+from .utils import loop
 
 
-class EventLoop(QEventLoop):
-    def _process_events(self, events):
-        """
-        Catch an exception sometimes thrown by ``asynct.QEventloop`` on Windows
-        that seems to relate to cancelled futures
-        """
-        for event in events:
-            try:
-                super()._process_events([event])
-            except asyncio.InvalidStateError:
-                pass
+def loop_worker(loop_: asyncio.AbstractEventLoop):
+    asyncio.set_event_loop(loop_)
+    loop_.run_forever()
 
 
 def main():
-    app = QApplication(sys.argv)
-    loop = EventLoop(app)
-    loop.set_debug(True)
-    asyncio.set_event_loop(loop)
+    loop_thread = threading.Thread(target=loop_worker, args=(loop,), daemon=True)
+    loop_thread.start()
+    root = tk.Tk()
+    app = AppWindow(loop, root)
+    app.pack(fill="both", expand=True)
 
-    with loop:
-        window = AppWindow(loop)
-        window.show()
-        return loop.run_forever()
+    root.mainloop()
 
 
 if __name__ == "__main__":

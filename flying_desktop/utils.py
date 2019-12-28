@@ -1,14 +1,63 @@
 import asyncio
+import logging
 import platform
+import traceback
+from asyncio import Future, Handle, Protocol, Transport
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import suppress
-from functools import partial
+from functools import partial, wraps
 from pathlib import Path
-from typing import Union, Awaitable
+from socket import socket
+from typing import Union, AsyncGenerator, Any
 
 import aiofiles
+import attr
+import pprintpp as pprintpp
 
 from .providers import Photo
+
+
+@attr.s(auto_attribs=True)
+class LoopError:
+    message: str
+    exception: Exception = None
+    future: Future = None
+    handle: Handle = None
+    protocol: Protocol = None
+    transport: Transport = None
+    socket: socket = None
+    asyncgen: AsyncGenerator = None
+    source_traceback: Any = None
+
+    def handler(self):
+        logging.error(
+            pprintpp.pformat({key: value for key, value in attr.asdict(self).items() if value})
+        )
+
+
+loop = asyncio.new_event_loop()
+loop.set_debug(True)
+loop.set_exception_handler(lambda _, context: LoopError(**context).handler())
+logging.basicConfig(
+    level=logging.WARNING,
+    format=" - ".join(f"%({x})s" for x in ["asctime", "levelname", "name", "message"]),
+)
+log = logging.getLogger(__name__)
+
+
+def handler(future: Future):
+    exc = future.exception()
+    if exc:
+        log.error("error in thread: %s: traceback:\n%s", exc, "".join(traceback.format_tb(exc.__traceback__)))
+
+
+def async_callback(func):
+    @wraps(func)
+    def new_func(*args, **kwargs):
+        future = asyncio.run_coroutine_threadsafe(func(*args, **kwargs), loop)
+        future.add_done_callback(handler)
+
+    return new_func
 
 
 class ChangeWallpaperDispatch:
@@ -31,7 +80,11 @@ def change_windows(path: Path):
     import win32con
     import win32gui
 
-    win32gui.SystemParametersInfo(win32con.SPI_SETDESKWALLPAPER, str(path), 0)
+    win32gui.SystemParametersInfo(
+        win32con.SPI_SETDESKWALLPAPER,
+        str(path),
+        win32con.SPIF_SENDCHANGE | win32con.SPIF_UPDATEINIFILE,
+    )
 
 
 @ChangeWallpaperDispatch.register("linux")
@@ -61,7 +114,5 @@ async def save_photo(photo: Photo, directory: PathLike, name: PathLike):
 executor = ThreadPoolExecutor()
 
 
-def delegate(func, *args) -> Awaitable:
-    loop = asyncio.get_event_loop()
-    result: Awaitable = loop.run_in_executor(executor, func, *args)
-    return result
+def delegate(func, *args) -> Future:
+    return loop.run_in_executor(executor, func, *args)
