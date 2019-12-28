@@ -43,14 +43,14 @@ loop.set_debug(True)
 loop.set_exception_handler(lambda _, context: LoopError(**context).handler())
 log = logging.getLogger(__name__)
 LOG_FILE = Path(user_log_dir(), "flying_desktop.log")
+LOG_FORMAT = logging.Formatter(
+    " - ".join(f"%({x})s" for x in ["asctime", "levelname", "name", "message"]),
+)
 
 
 def logging_setup():
     main_log = logging.getLogger("flying_desktop")
     main_log.setLevel(logging.DEBUG)
-    formatter = logging.Formatter(
-        " - ".join(f"%({x})s" for x in ["asctime", "levelname", "name", "message"]),
-    )
     LOG_FILE.parent.mkdir(exist_ok=True, parents=True)
     file_handler = logging.FileHandler(LOG_FILE)
     file_handler.setLevel(logging.INFO)
@@ -58,7 +58,7 @@ def logging_setup():
     console_handler.setLevel(logging.DEBUG)
 
     for handler in console_handler, file_handler:
-        handler.setFormatter(formatter)
+        handler.setFormatter(LOG_FORMAT)
         log.addHandler(handler)
 
 

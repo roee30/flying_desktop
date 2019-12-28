@@ -42,7 +42,10 @@ a = Entrypoint(
     "gui_scripts",
     "flydesk",
     binaries=[],
-    datas=[],
+    datas=[
+        (r"flying_desktop\providers\google\credentials.json", r"flying_desktop\providers\google"),
+        (r"flying_desktop\providers\facebook\credentials.json", r"flying_desktop\providers\facebook"),
+    ],
     hookspath=["."],
     runtime_hooks=[],
     excludes=[],

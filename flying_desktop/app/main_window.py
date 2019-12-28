@@ -4,6 +4,8 @@ import os
 import random
 import tempfile
 import tkinter as tk
+# noinspection PyPep8Naming
+import tkinter.scrolledtext as ScrolledText
 import traceback
 from typing import Sequence, Iterable, Tuple, Callable
 
@@ -12,9 +14,42 @@ from flying_desktop.app import WidthFilter, make_button, Progressbar
 from flying_desktop.app.providers_dialog import ProvidersDialog
 from flying_desktop.buckets import FilledBucket
 from flying_desktop.providers import BadResponse
-from flying_desktop.utils import save_photo, delegate, change_wallpaper, async_callback, LOG_FILE
+from flying_desktop.utils import (
+    save_photo,
+    delegate,
+    change_wallpaper,
+    async_callback,
+    LOG_FILE,
+    LOG_FORMAT,
+)
 
 log = logging.getLogger(__name__)
+
+
+class TextHandler(logging.Handler):
+    """
+    This class allows you to log to a Tkinter Text or ScrolledText widget
+    Adapted from Moshe Kaplan: https://gist.github.com/moshekaplan/c425f861de7bbf28ef06
+    """
+
+    def __init__(self, text):
+        # run the regular Handler __init__
+        super().__init__()
+        # Store a reference to the Text it will log to
+        self.text = text
+
+    def emit(self, record):
+        msg = self.format(record)
+
+        def append():
+            self.text.configure(state="normal")
+            self.text.insert(tk.END, msg + "\n")
+            self.text.configure(state="disabled")
+            # Autoscroll to the bottom
+            self.text.yview(tk.END)
+
+        # This is necessary because we can't modify the Text from other threads
+        self.text.after(0, append)
 
 
 class AppWindow(tk.Frame):
@@ -58,6 +93,14 @@ class AppWindow(tk.Frame):
         self.log_button = tk.Label(self, text="Log file", fg="blue", cursor="hand2")
         self.log_button.bind("<Button-1>", lambda _: os.system(f"notepad {LOG_FILE}"))
         self.log_button.pack()
+        self.console = ScrolledText.ScrolledText(self, state="disabled")
+        self.console.configure(font="TkFixedFont")
+        self.console.pack()
+        handler = TextHandler(self.console)
+        handler.setLevel(logging.DEBUG)
+        handler.setFormatter(LOG_FORMAT)
+        log.addHandler(handler)
+        log.debug("hello")
 
     def add_width_filter(self):
         """
