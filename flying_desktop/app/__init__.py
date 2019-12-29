@@ -5,8 +5,8 @@ from tkinter import ttk
 from typing import Callable
 
 
-def make_button(parent: tk.BaseWidget, text: str, callback: Callable):
-    button_ = tk.Button(parent, text=text)
+def make_button(parent: tk.BaseWidget, text: str, callback: Callable, **kw):
+    button_ = tk.Button(parent, text=text, **kw)
     if callback:
         button_["command"] = callback
     return button_
@@ -17,7 +17,7 @@ class WidthFilter(Spinbox):
     Spinbox for filtering images by width
     """
 
-    def __init__(self, parent, command, default=100):
+    def __init__(self, parent, command, default=1000):
         self.value = IntVar(None, value=default)
         super().__init__(
             parent,

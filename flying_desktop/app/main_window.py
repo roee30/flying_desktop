@@ -78,7 +78,7 @@ class AppWindow(tk.Frame):
         super().__init__(parent)
         self.loop = loop
         parent.title(PRETTY_NAME)
-        self.change_button = self.add_button("Hit me", self.change_wallpaper)
+        self.change_button = self.add_button("Hit me", self.change_wallpaper, bg="green", fg="white")
         self.label = tk.Label(self, text="Download not started")
         self.label.pack()
         self.width = self.add_width_filter()
@@ -119,18 +119,22 @@ class AppWindow(tk.Frame):
         Add photo width filter spinbox to window
         :return: push button and label
         """
-        width = WidthFilter(self, self.update_photo_status)
+        frame = tk.LabelFrame(self, text="Width", padx=5, pady=5)
+        label = tk.Label(frame, text="Minimum width")
+        label.pack()
+        width = WidthFilter(frame, self.update_photo_status)
         width.pack()
+        frame.pack()
         return width
 
-    def add_button(self, text: str, on_click: Callable = None,) -> tk.Button:
+    def add_button(self, text: str, on_click: Callable = None, **kw) -> tk.Button:
         """
         Add new button to window
         :param text: button text
         :param on_click: click handler
         :return: added button
         """
-        button = make_button(self, text, on_click)
+        button = make_button(self, text, on_click, **kw)
         button.pack()
         return button
 
