@@ -46,13 +46,16 @@ class ProviderGroup(tk.LabelFrame):
 
         self.log_in_out_button = tk.Button(self, text="Log in")
         self.log_in_out_button.grid(row=0, column=0)
-
+        empty_label = tk.Label(self, text=" " * 16)
+        empty_label.grid(row=0, column=1)
         self.check_box_value = tk.BooleanVar()
-        self.check_box = tk.Checkbutton(self, variable=self.check_box_value)
+        self.check_box = tk.Checkbutton(self, variable=self.check_box_value, padx=0)
         self.settings_key = f"{factory.name}/checked"
         if SETTINGS[self.settings_key]:
             self.check_box.select()
-        self.check_box.grid(row=0, column=1)
+        self.check_box.grid(row=0, column=2)
+        self.enable_label = tk.Label(self, text="Enable")
+        self.enable_label.grid(row=0, column=3)
 
 
 class ProvidersDialog:
