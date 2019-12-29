@@ -6,8 +6,12 @@ import sys
 import threading
 import tkinter as tk
 
-from flying_desktop.app.main_window import AppWindow
+from .log import logging_setup
+logging_setup()
+
+
 from .utils import loop
+from flying_desktop.app.main_window import AppWindow
 
 
 def loop_worker(loop_: asyncio.AbstractEventLoop):

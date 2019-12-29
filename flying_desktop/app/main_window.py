@@ -19,9 +19,8 @@ from flying_desktop.utils import (
     delegate,
     change_wallpaper,
     async_callback,
-    LOG_FILE,
-    LOG_FORMAT,
 )
+from flying_desktop.log import LOG_FILE, LOG_FORMAT, APP_NAME
 
 log = logging.getLogger(__name__)
 
@@ -80,7 +79,6 @@ class AppWindow(tk.Frame):
         self.loop = loop
         parent.title(PRETTY_NAME)
         self.change_button = self.add_button("Hit me", self.change_wallpaper)
-        #
         self.label = tk.Label(self, text="Download not started")
         self.label.pack()
         self.width = self.add_width_filter()
@@ -90,17 +88,31 @@ class AppWindow(tk.Frame):
             self, text="Connect", command=self.providers_dialog.show,
         )
         self.login_button.pack()
-        self.log_button = tk.Label(self, text="Log file", fg="blue", cursor="hand2")
-        self.log_button.bind("<Button-1>", lambda _: os.system(f"notepad {LOG_FILE}"))
-        self.log_button.pack()
-        self.console = ScrolledText.ScrolledText(self, state="disabled")
-        self.console.configure(font="TkFixedFont")
-        self.console.pack()
-        handler = TextHandler(self.console)
+        self.console = self.init_console()
+
+    def init_console(self):
+        log_button = tk.Label(self, text="Log file", fg="blue", cursor="hand2")
+        log_button.bind("<Button-1>", lambda _: os.system(f"notepad {LOG_FILE}"))
+        log_button.pack()
+        console = ScrolledText.ScrolledText(self, state="disabled")
+        console.configure(font="TkFixedFont")
+        handler = TextHandler(console)
         handler.setLevel(logging.DEBUG)
         handler.setFormatter(LOG_FORMAT)
-        log.addHandler(handler)
+        logging.getLogger(APP_NAME).addHandler(handler)
         log.debug("hello")
+
+        def show():
+            console.pack()
+            show_button["command"] = hide
+
+        def hide():
+            console.pack_forget()
+            show_button["command"] = show
+
+        show_button = tk.Button(self, text="Show console", fg="blue", command=show)
+        show_button.pack()
+        return console
 
     def add_width_filter(self):
         """

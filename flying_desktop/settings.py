@@ -1,4 +1,5 @@
 import json
+import logging
 from configparser import ConfigParser
 from pathlib import Path
 
@@ -9,6 +10,7 @@ from flying_desktop import APP_NAME
 version = "0.1.0"
 PATH = Path(user_cache_dir(appname=APP_NAME, version=version), "cache.ini")
 JSON_MARKER = ".json-19fc50b8fac149f790aa25ecf42d78ab"
+log = logging.getLogger(__name__)
 
 
 class Settings:
@@ -36,8 +38,9 @@ class Settings:
     __getitem__ = get
 
     def set(self, key, value):
+        log.debug(f"settings: {key} = {value}")
         is_string = isinstance(value, str)
-        self._settings.set(*self._json_key(key), json.dumps(is_string))
+        self._settings.set(*self._json_key(key), json.dumps(not is_string))
         if not is_string:
             value = json.dumps(value)
         self._settings.set(*self._make_key(key), value)

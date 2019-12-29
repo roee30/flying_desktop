@@ -36,7 +36,10 @@ class BucketFactory:
 class PhotoBucket:
     name: str
     description: str
-    checked: bool = True
+    checked: bool = False
+
+    def __attrs_post_init__(self):
+        self.checked = SETTINGS[f"{self.name}/checked"]
 
     @property
     def _credentials_key(self):
@@ -48,6 +51,7 @@ class FilledBucket(PhotoBucket):
     client: PhotoProvider
 
     def __attrs_post_init__(self):
+        super().__attrs_post_init__()
         self._photos = []
 
     async def download(self):

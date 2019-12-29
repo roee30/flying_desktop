@@ -13,9 +13,6 @@ from typing import Union, AsyncGenerator, Any
 import aiofiles
 import attr
 import pprintpp as pprintpp
-from appdirs import user_log_dir
-
-from .providers import Photo
 
 
 @attr.s(auto_attribs=True)
@@ -42,27 +39,8 @@ loop = asyncio.new_event_loop()
 loop.set_debug(True)
 loop.set_exception_handler(lambda _, context: LoopError(**context).handler())
 log = logging.getLogger(__name__)
-LOG_FILE = Path(user_log_dir(), "flying_desktop.log")
-LOG_FORMAT = logging.Formatter(
-    " - ".join(f"%({x})s" for x in ["asctime", "levelname", "name", "message"]),
-)
 
-
-def logging_setup():
-    main_log = logging.getLogger("flying_desktop")
-    main_log.setLevel(logging.DEBUG)
-    LOG_FILE.parent.mkdir(exist_ok=True, parents=True)
-    file_handler = logging.FileHandler(LOG_FILE)
-    file_handler.setLevel(logging.INFO)
-    console_handler = logging.StreamHandler()
-    console_handler.setLevel(logging.DEBUG)
-
-    for handler in console_handler, file_handler:
-        handler.setFormatter(LOG_FORMAT)
-        log.addHandler(handler)
-
-
-logging_setup()
+BUTTON_1 = "<Button-1>"
 
 
 def error_handler(future: Future):
@@ -124,7 +102,7 @@ def change_linux(path: Path):
 PathLike = Union[str, Path]
 
 
-async def save_photo(photo: Photo, directory: PathLike, name: PathLike):
+async def save_photo(photo, directory: PathLike, name: PathLike):
     destination = Path(directory, name)
     async with aiofiles.open(destination, "wb") as f:
         await f.write(photo.data)
