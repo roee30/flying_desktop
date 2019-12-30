@@ -15,6 +15,9 @@ from flying_desktop.app.main_window import AppWindow
 
 
 def loop_worker(loop_: asyncio.AbstractEventLoop):
+    """
+    Thread for running the asyncio event loop
+    """
     asyncio.set_event_loop(loop_)
     loop_.run_forever()
 

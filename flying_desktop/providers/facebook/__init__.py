@@ -1,3 +1,6 @@
+"""
+Facebook photos provider
+"""
 from pathlib import Path
 from typing import AsyncIterator, Sequence, Iterable
 
@@ -17,8 +20,6 @@ ACCESS_TOKEN_EXPIRED = 190
 class APIPath:
     """
     Represents a URL path relative to an API root
-    :param api: Graph API instance
-    :param path: Relative URL path
     """
 
     provider: 'FacebookPhotos' = attr.ib()
@@ -64,6 +65,9 @@ class FacebookPhotos(PhotoProvider):
         self.graph = APIPath(self)
 
     def renew_token(self):
+        """
+        Get a new login token
+        """
         self.storage.delete()
         credentials = self.authorization_code_grant()
         super().__init__(credentials)

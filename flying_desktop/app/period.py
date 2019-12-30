@@ -1,3 +1,6 @@
+"""
+Widget for controlling wallpaper change period
+"""
 import logging
 import tkinter as tk
 from datetime import timedelta
@@ -13,11 +16,20 @@ log = logging.getLogger(__name__)
 
 @attr.s(auto_attribs=True)
 class PeriodOption:
+    """
+    A single time-duration unit option
+    :param name: user-friendly name
+    :param duration: program-friendly duration
+    """
     name: str
     duration: timedelta
 
 
 class Period:
+    """
+    Widget for controlling wallpaper change period.
+    Contains a slider and a drop-down menu.
+    """
     OPTIONS: Mapping[str, PeriodOption] = {
         option.name: option
         for option in [
@@ -32,6 +44,10 @@ class Period:
     multiple = SettingsProperty("period/multiple")
 
     def __init__(self, parent, command):
+        """
+        :param parent: parent widget
+        :param command: callback for any child widget change
+        """
         self.command = command
         self.frame = pack(tk.LabelFrame(parent, text="Change period", padx=5, pady=5))
         self.variable = tk.StringVar(self.frame)
@@ -45,9 +61,15 @@ class Period:
         self.slider.grid(row=0, column=1)
 
     def on_change(self, _):
+        """
+        Save settings and invoke callback
+        """
         self.base = self.variable.get()
         self.multiple = self.slider.get()
         self.command()
 
-    def get(self):
+    def get(self) -> timedelta:
+        """
+        Return period of wallpaper switching according to user input
+        """
         return self.OPTIONS[self.variable.get()].duration * self.slider.get()

@@ -1,3 +1,6 @@
+"""
+Logging utilities
+"""
 import logging
 from pathlib import Path
 
@@ -14,6 +17,9 @@ APP_NAME = "flying_desktop"
 
 
 def logging_setup():
+    """
+    Attach handlers to the application's root logger
+    """
     main_log = logging.getLogger(APP_NAME)
     main_log.setLevel(logging.DEBUG)
     LOG_FILE.parent.mkdir(exist_ok=True, parents=True)

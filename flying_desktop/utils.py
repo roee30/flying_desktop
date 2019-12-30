@@ -1,3 +1,6 @@
+"""
+General utilities
+"""
 import asyncio
 import logging
 import platform
@@ -13,6 +16,8 @@ from typing import Union, AsyncGenerator, Any, TypeVar
 import aiofiles
 import attr
 import pprintpp as pprintpp
+
+from flying_desktop.providers import Photo
 
 
 @attr.s(auto_attribs=True)
@@ -44,6 +49,9 @@ BUTTON_1 = "<Button-1>"
 
 
 def error_handler(future: Future):
+    """
+    Send errors in coroutines to log
+    """
     exc = future.exception()
     if exc:
         log.error(
@@ -54,6 +62,9 @@ def error_handler(future: Future):
 
 
 def async_callback(func):
+    """
+    Make a coroutine suitable to use with widget callbacks
+    """
     @wraps(func)
     def new_func(*args, **kwargs):
         future = asyncio.run_coroutine_threadsafe(func(*args, **kwargs), loop)
@@ -63,14 +74,23 @@ def async_callback(func):
 
 
 class ChangeWallpaperDispatch:
+    """
+    Run different wallpaper change functions for different platforms
+    """
     functions = {}
 
     @classmethod
     def register(cls, name):
+        """
+        Register a function for platform
+        """
         return partial(cls.functions.__setitem__, name.lower())
 
     @classmethod
     def change_wallpaper(cls, path):
+        """
+        Invoke function for platform
+        """
         return cls.functions[platform.system().lower()](path)
 
 
@@ -102,7 +122,13 @@ def change_linux(path: Path):
 PathLike = Union[str, Path]
 
 
-async def save_photo(photo, directory: PathLike, name: PathLike):
+async def save_photo(photo: Photo, directory: PathLike, name: PathLike):
+    """
+    Download photo to path
+    :param photo: photo meta data
+    :param directory: target directory
+    :param name: target base name
+    """
     destination = Path(directory, name)
     async with aiofiles.open(destination, "wb") as f:
         await f.write(photo.data)
@@ -117,6 +143,9 @@ executor = ThreadPoolExecutor()
 
 
 def delegate(func, *args) -> Future:
+    """
+    Run coroutine in executor
+    """
     return loop.run_in_executor(executor, func, *args)
 
 
@@ -124,5 +153,8 @@ T = TypeVar("T")
 
 
 def pack(widget: T) -> T:
+    """
+    Pack and return widget
+    """
     widget.pack()
     return widget

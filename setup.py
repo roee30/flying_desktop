@@ -1,3 +1,6 @@
+"""
+Install the application
+"""
 from os import path
 from setuptools import setup, find_packages
 from flying_desktop import __version__

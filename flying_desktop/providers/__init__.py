@@ -1,3 +1,6 @@
+"""
+Providers are the application's interface to different picture sources
+"""
 import abc
 import json
 from http import HTTPStatus
@@ -51,6 +54,9 @@ class SettingsStorage(client.Storage):
 
 
 class PhotoProvider(metaclass=abc.ABCMeta):
+    """
+    Abstract class for photo providers
+    """
     @abc.abstractmethod
     def __init__(self, credentials: client.OAuth2Credentials):
         pass
@@ -127,4 +133,7 @@ class PhotoProvider(metaclass=abc.ABCMeta):
 
 @attr.s(hash=True, str=True)
 class BadResponse(Exception):
+    """
+    An unexpected response or one indicating an error
+    """
     response = attr.ib()

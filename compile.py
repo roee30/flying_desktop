@@ -1,3 +1,6 @@
+"""
+Run pyinstaller and create a windows PE (.exe) file
+"""
 import os
 import subprocess
 from pathlib import Path

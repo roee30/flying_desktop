@@ -1,3 +1,6 @@
+"""
+Dialog for logging in to different providers
+"""
 import logging
 import tkinter as tk
 from typing import Sequence, Dict, cast, Callable, Optional, TypeVar, Generic
@@ -23,6 +26,9 @@ B = TypeVar("B", bound=PhotoBucket)
 
 @attr.s(auto_attribs=True)
 class BucketLogin(Generic[B]):
+    """
+    A combination of a bucket and its associated functions
+    """
     bucket: B
     login: Callable
     logout: Callable
@@ -31,6 +37,9 @@ class BucketLogin(Generic[B]):
 
 
 class ProviderGroup(tk.LabelFrame):
+    """
+    Frame containing controls for provider
+    """
     log_in_out_button: tk.Button
     logout_button: tk.Button
     check_box: tk.Checkbutton
@@ -94,15 +103,27 @@ class ProvidersDialog:
 
     @property
     def buckets(self) -> Dict[str, PhotoBucket]:
+        """
+        View on buckets inside the login buckets
+        """
         return {key: value.bucket for key, value in self.login_buckets.items()}
 
     def show(self):
+        """
+        Show the dialog
+        """
         self.top.deiconify()
 
     def hide(self):
+        """
+        Hide the dialog
+        """
         self.top.withdraw()
 
     def ok(self):
+        """
+        Function for OK button
+        """
         self.hide()
         self.callback()
 
@@ -110,6 +131,7 @@ class ProvidersDialog:
         """
         Add login and logout buttons for provider.
         :param factory: bucket factory instance for producing empty buckets
+        :param i: factory index
         :return: created empty bucket
         """
         provider = ProviderGroup(self.top, factory)
@@ -117,6 +139,9 @@ class ProvidersDialog:
         bucket = factory.new()
 
         def checked():
+            """
+            Save checkbox value and invoke callback
+            """
             SETTINGS[provider.settings_key] = self.login_buckets[
                 factory.name
             ].bucket.checked = provider.check_box_value.get()
@@ -126,7 +151,11 @@ class ProvidersDialog:
 
         @async_callback
         async def login(*_):
+            """
+            Login to provider and download photos
+            """
             filled_bucket = await bucket.fill()
+            # noinspection PyArgumentList
             self.login_buckets[factory.name] = self.login_buckets[factory.name].evolve(
                 bucket=filled_bucket
             )
@@ -136,8 +165,12 @@ class ProvidersDialog:
             provider.log_in_out_button["command"] = logout
 
         def logout(*_):
+            """
+            Empty bucket
+            """
             filled_bucket = cast(FilledBucket, self.buckets[factory.name])
             filled_bucket.empty()
+            # noinspection PyArgumentList
             self.login_buckets[factory.name] = self.login_buckets[factory.name].evolve(
                 bucket=factory.new()
             )

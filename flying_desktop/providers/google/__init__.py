@@ -1,3 +1,6 @@
+"""
+Google Photos Provider
+"""
 from pathlib import Path
 from typing import AsyncIterator, Sequence, Iterable
 
@@ -96,5 +99,9 @@ class GooglePhotos(PhotoProvider):
         )
 
 
-def make_url(photo):
+def make_url(photo: dict):
+    """
+    Get download URL for photo
+    :param photo: photo data as returned from API
+    """
     return photo["baseUrl"] + "=d"

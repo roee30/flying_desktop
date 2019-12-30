@@ -29,6 +29,9 @@ class BucketFactory:
     init: Callable[[], PhotoProvider]
 
     def new(self, **kwargs):
+        """
+        Return a new empty bucket
+        """
         return EmptyBucket(**attr.asdict(self), **kwargs)
 
 
@@ -48,6 +51,9 @@ class PhotoBucket:
 
 @attrs
 class FilledBucket(PhotoBucket):
+    """
+    A bucket which has available photos
+    """
     client: PhotoProvider
 
     def __attrs_post_init__(self):
@@ -55,11 +61,17 @@ class FilledBucket(PhotoBucket):
         self._photos = []
 
     async def download(self):
+        """
+        Accumulate photos' metadata
+        """
         async for batch in self.client.download_meta_photos():
             self._photos += batch
             yield
 
     def select(self, min_width):
+        """
+        Return photos which satisfy minimum width requirement
+        """
         return self.client.filter_meta_photos(self.photos, min_width)
 
     @property
@@ -67,12 +79,18 @@ class FilledBucket(PhotoBucket):
         return self._photos
 
     def empty(self):
+        """
+        Empty the bucket
+        """
         SETTINGS[self._credentials_key] = False
         self.client.clear()
 
 
 @attrs
 class EmptyBucket(PhotoBucket):
+    """
+    A bucket with no available photos
+    """
     _init: Callable[[], PhotoProvider]
 
     @property
@@ -80,6 +98,9 @@ class EmptyBucket(PhotoBucket):
         return []
 
     async def fill(self) -> FilledBucket:
+        """
+        Fill the bucket with photos
+        """
         SETTINGS[self._credentials_key] = True
         return FilledBucket(
             name=self.name,
@@ -88,6 +109,9 @@ class EmptyBucket(PhotoBucket):
         )
 
     def has_credentials(self):
+        """
+        Returns whether the application has login credentials to the provider
+        """
         return SETTINGS.get(self._credentials_key, False)
 
 

@@ -1,3 +1,6 @@
+"""
+Utilities for storing and retrieving application settings
+"""
 import json
 import logging
 from configparser import ConfigParser
@@ -14,6 +17,9 @@ log = logging.getLogger(__name__)
 
 
 class Settings:
+    """
+    Saves and retrieves settings from an .ini file
+    """
     def __init__(self):
         self._settings = ConfigParser()
         PATH.parent.mkdir(parents=True, exist_ok=True)
@@ -29,6 +35,9 @@ class Settings:
         return self._make_key(key + JSON_MARKER)
 
     def get(self, item, default=None):
+        """
+        Retrieve settings value
+        """
         value = self._settings.get(*self._make_key(item), fallback=default)
         if self._settings.getboolean(*self._json_key(item), fallback=False):
             value = json.loads(value)
@@ -37,6 +46,9 @@ class Settings:
     __getitem__ = get
 
     def set(self, key, value):
+        """
+        Set settings value
+        """
         log.debug(f"settings: {key} = {value}")
         is_string = isinstance(value, str)
         self._settings.set(*self._json_key(key), json.dumps(not is_string))
@@ -49,6 +61,9 @@ class Settings:
     __setitem__ = set
 
     def remove(self, key):
+        """
+        Unset settings value
+        """
         return self._settings.remove_option(*self._make_key(key))
 
 
@@ -56,7 +71,13 @@ SETTINGS = Settings()
 
 
 class SettingsProperty:
+    """
+    Forwards settings value to class
+    """
     def __init__(self, key):
+        """
+        :param key: key to settings value, must have `/`
+        """
         self.key = key
 
     def __get__(self, instance, owner):

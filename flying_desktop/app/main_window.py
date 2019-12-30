@@ -1,3 +1,6 @@
+"""
+The first and main window of the application
+"""
 import asyncio
 import logging
 import os
@@ -41,9 +44,15 @@ class TextHandler(logging.Handler):
         self.text = text
 
     def emit(self, record):
+        """
+        Add log message to widget
+        """
         msg = self.format(record)
 
         def append():
+            """
+            Insert a log message at the end of the widget
+            """
             self.text.configure(state="normal")
             self.text.insert(tk.END, msg + "\n")
             self.text.configure(state="disabled")
@@ -106,12 +115,18 @@ class AppWindow(tk.Frame):
         )
 
     def change_wallpaper_and_schedule(self):
+        """
+        Invoke wallpaper change and schedule the next one
+        """
         log.debug("change_wallpaper_and_schedule")
         self.change_button.invoke()
         self.next_change_handle = None
         self.on_period_change()
 
     def on_period_change(self):
+        """
+        Cancel an invalid wallpaper change task and schedule a new one
+        """
         log.debug("on_period_change")
         if self.next_change_handle:
             self.parent.after_cancel(self.next_change_handle)
@@ -121,6 +136,9 @@ class AppWindow(tk.Frame):
         )
 
     def init_console(self):
+        """
+        Create a scrolled text widget containing log messages
+        """
         log_button = tk.Label(self, text="Log file", fg="blue", cursor="hand2")
         log_button.bind("<Button-1>", lambda _: os.system(f"notepad {LOG_FILE}"))
         log_button.pack()
@@ -206,10 +224,13 @@ class AppWindow(tk.Frame):
 
     @property
     def change_at(self):
+        """
+        Next time wallpaper should be changed
+        """
         value = SETTINGS["period/change_at"]
         if value:
             return datetime.fromisoformat(value)
-        return datetime.fromtimestamp(000000000)
+        return datetime.fromtimestamp(0)
 
     @change_at.setter
     def change_at(self, value: datetime):
