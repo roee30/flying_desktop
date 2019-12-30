@@ -8,7 +8,7 @@ from contextlib import suppress
 from functools import partial, wraps
 from pathlib import Path
 from socket import socket
-from typing import Union, AsyncGenerator, Any
+from typing import Union, AsyncGenerator, Any, TypeVar
 
 import aiofiles
 import attr
@@ -118,3 +118,11 @@ executor = ThreadPoolExecutor()
 
 def delegate(func, *args) -> Future:
     return loop.run_in_executor(executor, func, *args)
+
+
+T = TypeVar("T")
+
+
+def pack(widget: T) -> T:
+    widget.pack()
+    return widget

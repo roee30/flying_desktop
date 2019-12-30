@@ -14,7 +14,6 @@ log = logging.getLogger(__name__)
 
 
 class Settings:
-
     def __init__(self):
         self._settings = ConfigParser()
         PATH.parent.mkdir(parents=True, exist_ok=True)
@@ -54,3 +53,14 @@ class Settings:
 
 
 SETTINGS = Settings()
+
+
+class SettingsProperty:
+    def __init__(self, key):
+        self.key = key
+
+    def __get__(self, instance, owner):
+        return SETTINGS[self.key]
+
+    def __set__(self, instance, value):
+        SETTINGS[self.key] = value

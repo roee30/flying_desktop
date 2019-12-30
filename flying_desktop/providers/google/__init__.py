@@ -6,7 +6,7 @@ from googleapiclient.http import HttpRequest as GoogleHttpRequest
 from httplib2 import Http
 
 from flying_desktop.utils import delegate
-from .. import PhotoProvider, Photo, SettingsStorage
+from .. import PhotoProvider, Photo, SettingsStorage, BadResponse
 
 HERE = Path(__file__).parent
 
@@ -55,7 +55,12 @@ class GooglePhotos(PhotoProvider):
         yield result["mediaItems"]
         while "nextPageToken" in result:
             result = await self.download_meta_photos_page(result["nextPageToken"])
-            yield result["mediaItems"]
+            if not result:
+                continue
+            try:
+                yield result["mediaItems"]
+            except KeyError:
+                raise BadResponse(result)
 
     async def download_meta_photos_page(self, page_token=None):
         """

@@ -7,20 +7,23 @@ import tkinter as tk
 # noinspection PyPep8Naming
 import tkinter.scrolledtext as ScrolledText
 import traceback
+from datetime import datetime
 from typing import Sequence, Iterable, Tuple, Callable
 
 from flying_desktop import PRETTY_NAME
 from flying_desktop.app import WidthFilter, make_button, Progressbar
+from flying_desktop.app.period import Period
 from flying_desktop.app.providers_dialog import ProvidersDialog
 from flying_desktop.buckets import FilledBucket
+from flying_desktop.log import LOG_FILE, LOG_FORMAT, APP_NAME
 from flying_desktop.providers import BadResponse
+from flying_desktop.settings import SETTINGS
 from flying_desktop.utils import (
     save_photo,
     delegate,
     change_wallpaper,
     async_callback,
 )
-from flying_desktop.log import LOG_FILE, LOG_FORMAT, APP_NAME
 
 log = logging.getLogger(__name__)
 
@@ -77,8 +80,11 @@ class AppWindow(tk.Frame):
     def __init__(self, loop: asyncio.AbstractEventLoop, parent: tk.Tk):
         super().__init__(parent)
         self.loop = loop
+        self.parent = parent
         parent.title(PRETTY_NAME)
-        self.change_button = self.add_button("Hit me", self.change_wallpaper, bg="green", fg="white")
+        self.change_button = self.add_button(
+            "Hit me", self.change_wallpaper, bg="green", fg="white"
+        )
         self.label = tk.Label(self, text="Download not started")
         self.label.pack()
         self.width = self.add_width_filter()
@@ -88,13 +94,37 @@ class AppWindow(tk.Frame):
             self, text="Connect", command=self.providers_dialog.show,
         )
         self.login_button.pack()
+        self.next_change_handle = None
+        self.period = Period(self, self.on_period_change)
         self.console = self.init_console()
+        now = datetime.now()
+        if self.change_at < now:
+            self.change_wallpaper_and_schedule()
+        self.change_at = now + self.period.get()
+        self.next_change_handle = self.parent.after(
+            int(self.period.get().total_seconds()) * 1000, self.change_wallpaper_and_schedule
+        )
+
+    def change_wallpaper_and_schedule(self):
+        log.debug("change_wallpaper_and_schedule")
+        self.change_button.invoke()
+        self.next_change_handle = None
+        self.on_period_change()
+
+    def on_period_change(self):
+        log.debug("on_period_change")
+        if self.next_change_handle:
+            self.parent.after_cancel(self.next_change_handle)
+        self.change_at = datetime.now() + self.period.get()
+        self.next_change_handle = self.parent.after(
+            int(self.period.get().total_seconds()) * 1000, self.change_wallpaper_and_schedule
+        )
 
     def init_console(self):
         log_button = tk.Label(self, text="Log file", fg="blue", cursor="hand2")
         log_button.bind("<Button-1>", lambda _: os.system(f"notepad {LOG_FILE}"))
         log_button.pack()
-        console = ScrolledText.ScrolledText(self, state="disabled")
+        console = ScrolledText.ScrolledText(self, state="disabled", padx=0, pady=0)
         console.configure(font="TkFixedFont")
         handler = TextHandler(console)
         handler.setLevel(logging.DEBUG)
@@ -156,7 +186,6 @@ class AppWindow(tk.Frame):
         :param bucket: bucket of photos to which ``meta_photo`` belongs
         :param meta_photo: metadata of photo to set wallpaper to
         :param retry: amount of retries on failure
-        :return:
         """
         try:
             self.change_button["state"] = tk.DISABLED
@@ -175,6 +204,17 @@ class AppWindow(tk.Frame):
         finally:
             self.change_button["state"] = tk.NORMAL
 
+    @property
+    def change_at(self):
+        value = SETTINGS["period/change_at"]
+        if value:
+            return datetime.fromisoformat(value)
+        return datetime.fromtimestamp(000000000)
+
+    @change_at.setter
+    def change_at(self, value: datetime):
+        SETTINGS["period/change_at"] = value.isoformat()
+
     def select(self) -> Sequence[Tuple[FilledBucket, dict]]:
         """
         Return all meta photos for which filters apply
@@ -190,7 +230,9 @@ class AppWindow(tk.Frame):
         """
         Select a photo from filtered photos and set it as wallpaper
         """
+        log.debug("changing wallpaper")
         if not self.meta_photos:
+            log.info("no meta photos")
             keys = ("borderwidth", "highlightbackground", "highlightcolor")
             old_values = {key: self.login_button[key] for key in keys}
             try:
@@ -199,6 +241,7 @@ class AppWindow(tk.Frame):
             finally:
                 self.login_button.configure(old_values)
             return
+        log.debug("meta photos found")
         filtered_photos = self.select()
         if not filtered_photos:
             log.warning("no matching photos")
