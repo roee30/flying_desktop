@@ -31,7 +31,7 @@ dist\flydesk
 4. Press "Hit me"
 
 ## Todo
-- [ ] add periodic wallpaper switching
+- [x] add periodic wallpaper switching
 - [ ] add Linux binary packaging
 
 ## Similar applications
