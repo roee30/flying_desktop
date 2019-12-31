@@ -5,6 +5,7 @@ import logging
 from pathlib import Path
 
 from appdirs import user_log_dir
+from . import APP_NAME
 
 
 LOG_FILE = Path(user_log_dir(), "flying_desktop.log")
@@ -13,7 +14,6 @@ LOG_FILE = Path(user_log_dir(), "flying_desktop.log")
 LOG_FORMAT = logging.Formatter(
     " - ".join(f"%({x})s" for x in ["asctime", "levelname", "name", "message"]),
 )
-APP_NAME = "flying_desktop"
 
 
 def logging_setup():

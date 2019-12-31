@@ -13,12 +13,12 @@ import traceback
 from datetime import datetime
 from typing import Sequence, Iterable, Tuple, Callable
 
-from flying_desktop import PRETTY_NAME
+from flying_desktop import PRETTY_NAME, APP_NAME
 from flying_desktop.app import WidthFilter, make_button, Progressbar
 from flying_desktop.app.period import Period
 from flying_desktop.app.providers_dialog import ProvidersDialog
 from flying_desktop.buckets import FilledBucket
-from flying_desktop.log import LOG_FILE, LOG_FORMAT, APP_NAME
+from flying_desktop.log import LOG_FILE, LOG_FORMAT
 from flying_desktop.providers import BadResponse
 from flying_desktop.settings import SETTINGS
 from flying_desktop.utils import (
