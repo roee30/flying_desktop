@@ -11,6 +11,10 @@ This is a POC for combining asynchronous code of two types: `asyncio` and `tkint
 The main "trick" is having a thread run the `asyncio` loop and the main thread running the `tkinter` loop.
 
 ## Installation & Running
+### Direct Download
+1. Download `flydesk.exe` executable from the [releases](http://github.com/roee30/flying_desktop/releases/latest) page
+2. Run the executable
+
 ### With pip
 ```
 pip install .
