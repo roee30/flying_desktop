@@ -102,11 +102,13 @@ def change_windows(path: Path):
     import win32con
     import win32gui
 
-    win32gui.SystemParametersInfo(
+    val = win32gui.SystemParametersInfo(
         win32con.SPI_SETDESKWALLPAPER,
         str(path),
         win32con.SPIF_SENDCHANGE | win32con.SPIF_UPDATEINIFILE,
     )
+    if val is not None:
+        log.warning("change wallpaper returned: %s", val)
 
 
 @ChangeWallpaperDispatch.register("linux")
